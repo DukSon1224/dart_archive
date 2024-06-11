@@ -227,9 +227,14 @@ class InputFileStream extends InputStreamBase {
 
     final s = readBytes(size);
     final bytes = s.toUint8List();
-    final str =
-        utf8 ? Utf8Decoder().convert(bytes) : String.fromCharCodes(bytes);
-    return str;
+    try {
+      final str =
+          utf8 ? Utf8Decoder().convert(bytes) : String.fromCharCodes(bytes);
+      return str;
+    } catch (err) {
+      // If the string is not a valid UTF8 string, decode it as character codes.
+      return String.fromCharCodes(bytes);
+    }
   }
 
   FileBuffer get file => _file;
