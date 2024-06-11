@@ -1,3 +1,4 @@
+import '../util/crc32.dart';
 import '../util/input_stream.dart';
 import 'zip_file.dart';
 
@@ -88,6 +89,24 @@ class ZipFileHeader {
             if (size >= 4 && diskNumberStart == 0xFFFF) {
               diskNumberStart = extraBytes.readUint32();
               size -= 4;
+            }
+          } else if (id == 0x7075) {
+            /* https://libzip.org/specifications/extrafld.txt
+            Value         Size        Description
+            -----         ----        -----------
+    (UPath) 0x7075        Short       tag for this extra block type ("up")
+            TSize         Short       total data size for this block
+            Version       1 byte      version of this extra field, currently 1
+            NameCRC32     4 bytes     File Name Field CRC32 Checksum
+            UnicodeName   Variable    UTF-8 version of the entry File Name
+            */
+            // final version = extraBytes.readByte();
+            extraBytes.position += 1;
+            final nameCRC32 = extraBytes.readUint32();
+            final nameByteSize = size - 5;
+            final computedCRC32 = getCrc32(filename.codeUnits);
+            if (nameCRC32 == computedCRC32) {
+              filename = extraBytes.readString(size: nameByteSize);
             }
           }
         }
